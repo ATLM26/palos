@@ -10,7 +10,7 @@
 // ============================================================
 
 window.SUPABASE_CONFIG = {
-  url:     "https://dfgidosycoqwsdifudhf.supabase.co/rest/v1/",
+  url:     "https://dfgidosycoqwsdifudhf.supabase.co",
   anonKey: "sb_publishable_gTCL3GtC_IrP5p2szBu6rw_qcvIA27y"
 };
 s
