@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#101913">
+<title>Palos · patadas a los palos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pitch:#16241C; --bg:#0E1712; --panel:#1B2A22; --panel2:#12201A;
+    --line:#2A3E33; --chalk:#EDE9DF; --dim:#93A79A;
+    --ok:#F2C14E; --no:#E2574C; --mint:#7FD4C1;
+    --r:12px;
+    --display:"Oswald","Arial Narrow",Impact,sans-serif;
+    --body:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--chalk);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  h1,h2,h3{margin:0}
+  button,select,input{font-family:var(--body);font-size:14px}
+  a{color:var(--mint)}
+  .wrap{max-width:1100px;margin:0 auto;padding:14px 14px 48px}
+  .hidden{display:none !important}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0 14px}
+  .brand{font-family:var(--display);font-weight:600;font-size:23px;letter-spacing:.06em;text-transform:uppercase;line-height:1}
+  .brand em{font-style:normal;color:var(--ok)}
+  .who{font-size:12px;color:var(--dim);text-align:right;max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .btn{background:#22342B;color:var(--chalk);border:1px solid var(--line);border-radius:9px;padding:10px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{background:#2A4034}
+  .btn:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+  .btn.ghost{background:transparent}
+  .btn.small{padding:7px 11px;font-size:13px}
+  .btn.wide{width:100%}
+  .btn.ok{background:var(--ok);color:#1A1405;border-color:var(--ok);font-weight:600;width:100%;font-size:17px;padding:15px}
+  .btn.miss{background:#3A211E;color:#F5B3AD;border:1px solid var(--no);font-weight:600;flex:1;font-size:15px;padding:13px 6px}
+  .btn.miss:hover{background:#4A2A26}
+  .btn.miss span{display:block;font-size:11px;font-weight:400;opacity:.8;letter-spacing:.04em}
+  .btn.primary{background:var(--mint);color:#0C1A16;border-color:var(--mint);font-weight:600}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+
+  input[type=text],input[type=email],input[type=password],input[type=date],select{
+    background:#101B15;color:var(--chalk);border:1px solid var(--line);border-radius:9px;padding:11px 12px;width:100%}
+  label.field{display:flex;flex-direction:column;gap:5px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .row{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end}
+  .row>*{flex:1;min-width:0}
+  .row .fit{flex:0 0 auto}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:15px}
+  .card+.card{margin-top:14px}
+  .card h2{font-family:var(--display);text-transform:uppercase;letter-spacing:.07em;font-size:14px;font-weight:500;color:var(--dim);margin-bottom:11px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .card h2 .act{font-family:var(--body);font-size:12px;letter-spacing:0;text-transform:none}
+
+  /* combo con sugerencias */
+  .combo{position:relative}
+  .combo .sug{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#0F1A14;border:1px solid var(--line);border-radius:9px;max-height:180px;overflow:auto;z-index:30;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+  .combo .sug div{padding:10px 12px;cursor:pointer;font-size:14px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .combo .sug div:last-child{border-bottom:none}
+  .combo .sug div:hover,.combo .sug div.on{background:#23382D}
+
+  /* login */
+  .gate{max-width:390px;margin:6vh auto;padding:0 16px}
+  .gate .lead{font-family:var(--display);font-size:40px;line-height:1.05;text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
+  .gate .lead em{font-style:normal;color:var(--ok)}
+  .gate p.sub{color:var(--dim);font-size:14px;margin:0 0 22px}
+  .gate .card>*+*{margin-top:12px}
+  .switch{text-align:center;font-size:13px;color:var(--dim);margin-top:14px}
+  .switch button{background:none;border:none;color:var(--mint);cursor:pointer;font-size:13px;text-decoration:underline;padding:0}
+  .msg{font-size:13px;border-radius:8px;padding:10px 12px;margin-top:2px}
+  .msg.err{background:rgba(226,87,76,.14);border:1px solid rgba(226,87,76,.5);color:#F5B3AD}
+  .msg.okmsg{background:rgba(127,212,193,.12);border:1px solid rgba(127,212,193,.45);color:var(--mint)}
+
+  .tabs{display:flex;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:5px;margin-bottom:16px}
+  .tabs button{flex:1;background:none;border:none;color:var(--dim);font-family:var(--display);font-size:14px;letter-spacing:.08em;text-transform:uppercase;padding:9px 6px;border-radius:999px;cursor:pointer}
+  .tabs button[aria-selected="true"]{background:#26402F;color:var(--chalk)}
+
+  /* segmented (tiempo, intensidad) */
+  .seg{display:flex;gap:5px;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:4px}
+  .seg button{flex:1;background:none;border:none;color:var(--dim);font-size:13px;padding:8px 6px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .seg button[aria-pressed="true"]{background:#26402F;color:var(--chalk);font-weight:600}
+
+  .pitchbox{background:var(--pitch);border:1px solid var(--line);border-radius:var(--r);padding:8px;position:relative}
+  svg.pitch{width:100%;height:auto;display:block;touch-action:manipulation;cursor:crosshair}
+  .stripe{fill:#18291F}
+  .chalkline{stroke:var(--chalk);stroke-opacity:.55;fill:none;stroke-width:2}
+  .chalkline.soft{stroke-opacity:.3;stroke-dasharray:8 10}
+  .chalkline.strong{stroke-opacity:.85;stroke-width:3}
+  .post{stroke:var(--chalk);stroke-opacity:.9;stroke-width:5;stroke-linecap:round}
+  .zlabel{fill:var(--chalk);fill-opacity:.3;font-family:var(--display);font-size:15px;letter-spacing:.08em}
+  .cellpct{fill:var(--chalk);font-family:var(--display);font-size:15px;text-anchor:middle;pointer-events:none}
+  .cellsub{fill:var(--chalk);fill-opacity:.7;font-family:var(--body);font-size:9.5px;text-anchor:middle;pointer-events:none}
+  .mk-ok{fill:var(--ok);stroke:#10190F;stroke-width:1.5}
+  .mk-no{fill:none;stroke:var(--no);stroke-width:3}
+  .mk-pend{fill:none;stroke:var(--mint);stroke-width:3;stroke-dasharray:5 4}
+  .mk-wait{fill:none;stroke:var(--dim);stroke-width:2;stroke-dasharray:3 3}
+
+  .confirm{background:#12211A;border:1px dashed var(--mint);border-radius:var(--r);padding:13px;margin-top:11px}
+  .confirm p{margin:0 0 11px;font-size:13px;color:var(--dim)}
+  .confirm b{color:var(--chalk);font-family:var(--display);font-size:17px;letter-spacing:.03em}
+  .confirm .misses{display:flex;gap:8px;margin-top:9px}
+  .hint{font-size:12.5px;color:var(--dim);margin:9px 2px 0}
+  .legend{display:flex;gap:15px;font-size:12px;color:var(--dim);margin-top:9px;flex-wrap:wrap}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(min-width:620px){.kpis{grid-template-columns:repeat(4,1fr)}}
+  .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:var(--r);padding:13px}
+  .kpi .n{font-family:var(--display);font-size:34px;line-height:1;color:var(--ok)}
+  .kpi .n.small{font-size:23px;color:var(--chalk)}
+  .kpi .l{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);margin-top:6px}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  td.num{font-family:var(--display);font-size:17px;text-align:right;white-space:nowrap}
+  td.num i{display:block;font-style:normal;font-family:var(--body);font-size:11px;color:var(--dim)}
+  .bar{height:5px;border-radius:3px;background:#0C1511;overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;background:var(--ok);border-radius:3px}
+  .bar.thin i{background:var(--no)}
+  .empty{color:var(--dim);font-size:13px;padding:8px 2px}
+
+  .plist .prow{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .plist .prow:last-child{border-bottom:none}
+  .plist input[type=checkbox]{width:19px;height:19px;accent-color:var(--mint);flex:none}
+  .plist .pname{flex:1;font-size:13.5px;line-height:1.3;min-width:0}
+  .plist .pname i{display:block;font-style:normal;font-size:11px;color:var(--dim)}
+
+  /* viento */
+  .windrow{display:flex;gap:13px;align-items:center}
+  .windrow svg{flex:0 0 auto}
+  .windinfo{font-size:13px;line-height:1.35}
+  .windinfo b{font-family:var(--display);font-size:16px;letter-spacing:.03em;display:block}
+  .windinfo i{font-style:normal;color:var(--dim);font-size:12px}
+  .dial{width:100%;max-width:220px;margin:4px auto 0;display:block;cursor:pointer}
+  .dial .hit{fill:transparent}
+  .dial .arm{stroke:var(--line);stroke-width:1}
+  .dial .sel{fill:var(--mint)}
+
+  .modal{position:fixed;inset:0;background:rgba(6,10,8,.78);display:flex;align-items:center;justify-content:center;padding:16px;z-index:60}
+  .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;max-width:400px;width:100%;max-height:92vh;overflow:auto}
+  .modal h3{font-family:var(--display);text-transform:uppercase;letter-spacing:.06em;font-size:17px;margin-bottom:4px}
+  .modal p.sub{color:var(--dim);font-size:12.5px;margin:0 0 14px}
+
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:#0B120E;border:1px solid var(--mint);padding:11px 17px;border-radius:9px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:80;max-width:90vw;text-align:center}
+  .toast.show{opacity:1}
+  .banner{background:rgba(242,193,78,.12);border:1px solid rgba(242,193,78,.45);color:var(--ok);border-radius:9px;padding:10px 13px;font-size:13px;margin-bottom:12px}
+  .cols{display:grid;grid-template-columns:1fr;gap:14px}
+  @media(min-width:900px){.cols{grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);align-items:start}}
+  @media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+
+<section id="gate" class="gate hidden">
+  <div class="lead">Pal<em>o</em>s</div>
+  <p class="sub">Registrá cada patada a los palos y mirá tu efectividad por zona, por partido y por temporada.</p>
+  <div class="card">
+    <label class="field">Mail<input type="email" id="email" autocomplete="email" placeholder="vos@mail.com"></label>
+    <label class="field">Contraseña<input type="password" id="pass" autocomplete="current-password" placeholder="mínimo 6 caracteres"></label>
+    <button class="btn primary wide" id="btnAuth">Entrar</button>
+    <div id="authMsg"></div>
+  </div>
+  <p class="switch"><span id="switchTxt">¿Todavía no tenés cuenta?</span>
+    <button id="switchMode">Crear una</button></p>
+</section>
+
+<div class="wrap hidden" id="app">
+  <div class="topbar">
+    <div class="brand">Pal<em>o</em>s</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="who" id="who"></div>
+      <button class="btn small ghost" id="btnSalir">Salir</button>
+    </div>
+  </div>
+
+  <div id="offlineBanner" class="banner hidden"></div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="registrar" aria-selected="true">Registrar</button>
+    <button role="tab" data-tab="stats" aria-selected="false">Estadísticas</button>
+    <button role="tab" data-tab="partidos" aria-selected="false">Partidos</button>
+  </div>
+
+  <!-- ================= REGISTRAR ================= -->
+  <section id="tab-registrar">
+    <div class="cols">
+      <div>
+        <div class="pitchbox">
+          <svg class="pitch" id="pitch" viewBox="0 0 740 680" role="img"
+               aria-label="Media cancha de rugby. Tocá el punto desde donde pateaste."></svg>
+        </div>
+        <div class="legend">
+          <span><i class="dot" style="background:var(--ok)"></i>Entró</span>
+          <span><i class="dot" style="border:2px solid var(--no)"></i>Erró</span>
+          <span id="legPend" class="hidden"><i class="dot" style="border:2px dashed var(--dim)"></i>Sin sincronizar</span>
+        </div>
+        <div id="confirmBox"></div>
+        <p class="hint">Tocá la cancha en el punto exacto desde donde pateaste y después marcá el resultado.</p>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Patada actual</h2>
+          <label class="field">Partido<select id="selPartido"></select></label>
+          <div class="row" style="margin-top:11px">
+            <label class="field">Tipo
+              <select id="selTipo">
+                <option value="penal">Penal</option>
+                <option value="conversion">Conversión</option>
+                <option value="drop">Drop</option>
+              </select>
+            </label>
+          </div>
+          <div style="margin-top:13px">
+            <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:5px">Tiempo</div>
+            <div class="seg" id="segTiempo">
+              <button data-t="1" aria-pressed="true">1º tiempo</button>
+              <button data-t="2" aria-pressed="false">2º tiempo</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Viento <button class="btn small ghost act" id="editViento">Cambiar</button></h2>
+          <div id="vientoBox"></div>
+        </div>
+
+        <div class="card">
+          <h2>Este partido</h2>
+          <div class="kpis" id="kpisPartido"></div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn small ghost fit" id="undo">Deshacer última</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ESTADÍSTICAS ================= -->
+  <section id="tab-stats" class="hidden">
+    <div class="card">
+      <h2>Qué partidos mirar</h2>
+      <div class="row" style="margin-bottom:9px">
+        <button class="btn small ghost fit" id="selTodos">Todos</button>
+        <button class="btn small ghost fit" id="selNinguno">Ninguno</button>
+        <select id="filtroTipo" class="fit" style="width:auto">
+          <option value="todos">Todos los tipos</option>
+          <option value="penal">Solo penales</option>
+          <option value="conversion">Solo conversiones</option>
+          <option value="drop">Solo drops</option>
+        </select>
+        <select id="filtroTiempo" class="fit" style="width:auto">
+          <option value="todos">Los dos tiempos</option>
+          <option value="1">Solo 1º tiempo</option>
+          <option value="2">Solo 2º tiempo</option>
+        </select>
+      </div>
+      <div id="listaPartidos" class="plist"></div>
+    </div>
+
+    <div style="margin-top:14px"><div class="kpis" id="kpis"></div></div>
+
+    <div class="cols" style="margin-top:14px">
+      <div>
+        <div class="card">
+          <h2>Mapa de efectividad</h2>
+          <div class="pitchbox" style="border:none;padding:0">
+            <svg class="pitch" id="pitchStats" viewBox="0 0 740 680" role="img"
+                 aria-label="Mapa de calor de efectividad por zona"></svg>
+          </div>
+          <p class="hint">Las zonas con menos de 3 patadas se muestran apagadas: con tan poca muestra el porcentaje no dice mucho todavía.</p>
+        </div>
+        <div class="card">
+          <h2>Por dónde errás</h2>
+          <table id="tablaLado"><tbody></tbody></table>
+          <p class="hint" id="hintLado"></p>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Por distancia</h2>
+          <table id="tablaDist"><tbody></tbody></table>
+        </div>
+        <div class="card">
+          <h2>Por ángulo</h2>
+          <table id="tablaAng"><tbody></tbody></table>
+        </div>
+        <div class="card">
+          <h2>Por tiempo y viento</h2>
+          <table id="tablaCtx"><tbody></tbody></table>
+        </div>
+        <div class="card">
+          <h2>Partido a partido</h2>
+          <svg id="chartPartidos" viewBox="0 0 420 190" style="width:100%;height:auto"></svg>
+          <p class="hint" id="chartHint"></p>
+        </div>
+        <div class="card">
+          <h2>Últimas patadas</h2>
+          <table id="tablaUltimas"><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PARTIDOS ================= -->
+  <section id="tab-partidos" class="hidden">
+    <div class="card">
+      <h2>Nuevo partido</h2>
+      <div class="row">
+        <label class="field" style="max-width:170px">Fecha<input type="date" id="nuevaFecha"></label>
+        <label class="field">Rival
+          <div class="combo"><input type="text" id="nuevoRival" autocomplete="off" placeholder="Escribí o elegí uno"><div class="sug hidden" id="sugRival"></div></div>
+        </label>
+      </div>
+      <div class="row" style="margin-top:11px">
+        <label class="field">Torneo
+          <div class="combo"><input type="text" id="nuevoTorneo" autocomplete="off" placeholder="Escribí o elegí uno"><div class="sug hidden" id="sugTorneo"></div></div>
+        </label>
+        <label class="field" style="max-width:170px">Condición
+          <select id="nuevaCondicion">
+            <option value="">—</option>
+            <option value="local">Local</option>
+            <option value="visitante">Visitante</option>
+          </select>
+        </label>
+      </div>
+      <div class="row" style="margin-top:13px">
+        <button class="btn primary fit" id="addPartido">Agregar partido</button>
+      </div>
+      <p class="hint">Empezá a escribir y te va a sugerir los rivales y torneos que ya usaste. Si es nuevo, escribilo y listo.</p>
+    </div>
+
+    <div class="card">
+      <h2>Tus partidos</h2>
+      <table id="tablaPartidos"><tbody></tbody></table>
+    </div>
+
+    <div class="card">
+      <h2>Tus datos</h2>
+      <div class="row">
+        <button class="btn small ghost fit" id="export">Exportar CSV</button>
+        <button class="btn small ghost fit" id="recargar">Recargar del servidor</button>
+      </div>
+      <p class="hint">El CSV trae el detalle completo, incluido lado del error, tiempo y viento.</p>
+    </div>
+  </section>
+</div>
+
+<div id="modalRoot"></div>
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+/* ============ geometría (1 m = 10 unidades) ============ */
+const S=10, X0=20, X1=720, Y_DEAD=30, Y_TRY=130, Y_HALF=630;
+const CX=370, POST_L=342, POST_R=398, CROSS=Y_TRY-32;
+
+/* cuadrantes 7 x 6 */
+const NC=7, NR=6;
+const COLX=Array.from({length:NC+1},(_,i)=>X0+(X1-X0)*i/NC);
+const ROWY=Array.from({length:NR+1},(_,i)=>Y_TRY+(Y_HALF-Y_TRY)*i/NR);
+const COLN=["Muy abierta izq","Abierta izq","Media izq","Frente","Media der","Abierta der","Muy abierta der"];
+const ROWN=Array.from({length:NR},(_,i)=>{
+  const a=Math.round((ROWY[i]-Y_TRY)/S), b=Math.round((ROWY[i+1]-Y_TRY)/S);
+  return `${a}–${b} m`;});
+const MIN_MUESTRA=3;
+
+const TIPON={penal:"Penal",conversion:"Conversión",drop:"Drop"};
+const LADON={izq:"Izquierda",der:"Derecha",corta:"Corta"};
+const INTN={bajo:"bajo",medio:"medio",alto:"alto"};
+const DIRN={0:"a favor",45:"cruzado a favor der",90:"cruzado der",135:"cruzado en contra der",
+            180:"en contra",225:"cruzado en contra izq",270:"cruzado izq",315:"cruzado a favor izq"};
+
+const col=x=>{for(let i=0;i<NC;i++) if(x<COLX[i+1]) return i; return NC-1;};
+const row=y=>{for(let i=0;i<NR;i++) if(y<ROWY[i+1]) return i; return NR-1;};
+const dist=(x,y)=>Math.round(Math.hypot(x-CX,y-Y_TRY)/S);
+const pct=(m,a)=>a?Math.round(m/a*100):0;
+const $=s=>document.querySelector(s);
+const esc=t=>String(t??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+/* ============ estado ============ */
+let sb=null,user=null,partidos=[],patadas=[],cola=[];
+let pending=null,sel=new Set(['sin-partido']),modoAlta=false,tiempo=1;
+
+const COLA_KEY='palos:cola';
+const leerCola=()=>{try{return JSON.parse(localStorage.getItem(COLA_KEY)||'[]')}catch(e){return[]}};
+const grabarCola=()=>localStorage.setItem(COLA_KEY,JSON.stringify(cola));
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');
+  clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200);}
+
+/* ============ arranque ============ */
+const cfg=window.SUPABASE_CONFIG||{};
+if(!cfg.url||cfg.url.includes('TU-PROYECTO')){
+  document.body.innerHTML='<div class="gate"><div class="lead">Falta la configuración</div>'+
+    '<p class="sub">Abrí <b>config.js</b> y pegá la URL y la clave pública de tu proyecto de Supabase.</p></div>';
+}else{
+  sb=createClient(cfg.url,cfg.anonKey);
+  sb.auth.getSession().then(({data})=>onSession(data.session));
+  sb.auth.onAuthStateChange((_e,s)=>onSession(s));
+}
+async function onSession(session){
+  user=session?.user||null;
+  if(user){
+    $('#gate').classList.add('hidden'); $('#app').classList.remove('hidden');
+    $('#who').textContent=user.email;
+    dibujarCancha($('#pitch')); dibujarCancha($('#pitchStats'));
+    $('#nuevaFecha').value=new Date().toISOString().slice(0,10);
+    cola=leerCola(); await cargar();
+  }else{ $('#app').classList.add('hidden'); $('#gate').classList.remove('hidden'); }
+}
+
+/* ============ auth ============ */
+const authMsg=(t,k)=>$('#authMsg').innerHTML=t?`<div class="msg ${k==='err'?'err':'okmsg'}">${esc(t)}</div>`:'';
+$('#switchMode').onclick=()=>{
+  modoAlta=!modoAlta; authMsg('');
+  $('#btnAuth').textContent=modoAlta?'Crear cuenta':'Entrar';
+  $('#switchTxt').textContent=modoAlta?'¿Ya tenés cuenta?':'¿Todavía no tenés cuenta?';
+  $('#switchMode').textContent=modoAlta?'Entrar':'Crear una';
+};
+$('#btnAuth').onclick=async()=>{
+  const email=$('#email').value.trim(),password=$('#pass').value;
+  if(!email||!password){authMsg('Poné mail y contraseña.','err');return;}
+  if(modoAlta&&password.length<6){authMsg('La contraseña tiene que tener al menos 6 caracteres.','err');return;}
+  $('#btnAuth').disabled=true; authMsg('');
+  const {data,error}=modoAlta?await sb.auth.signUp({email,password})
+                             :await sb.auth.signInWithPassword({email,password});
+  $('#btnAuth').disabled=false;
+  if(error){authMsg(error.message==='Invalid login credentials'?'Mail o contraseña incorrectos.':error.message,'err');return;}
+  if(modoAlta&&!data.session) authMsg('Cuenta creada. Confirmá el mail y después entrá.','ok');
+};
+$('#btnSalir').onclick=async()=>{await sb.auth.signOut();location.reload();};
+$('#pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#btnAuth').click();});
+
+/* ============ datos ============ */
+async function cargar(){
+  const [rp,rk]=await Promise.all([
+    sb.from('partidos').select('*').order('fecha',{ascending:false,nullsFirst:false}),
+    sb.from('patadas').select('*').order('created_at',{ascending:true})]);
+  if(rp.error||rk.error){toast('No se pudieron cargar los datos.');return;}
+  partidos=rp.data||[]; patadas=rk.data||[];
+  sel=new Set(idsPartidos()); await vaciarCola(); render();
+}
+const idsPartidos=()=>['sin-partido',...partidos.map(p=>p.id)];
+const pid=p=>p.partido_id||'sin-partido';
+const partidoActivo=()=>partidos.find(p=>p.id===$('#selPartido').value)||null;
+function nombrePartido(id){
+  if(id==='sin-partido') return 'Sin partido';
+  const p=partidos.find(x=>x.id===id); if(!p) return 'Partido';
+  const f=p.fecha?p.fecha.split('-').reverse().slice(0,2).join('/'):'';
+  return (p.rival||'Rival')+(f?' · '+f:'');
+}
+async function vaciarCola(){
+  if(!cola.length) return;
+  const quedan=[];
+  for(const k of cola){ const {error}=await sb.from('patadas').insert(k); if(error) quedan.push(k); }
+  const n=cola.length-quedan.length; cola=quedan; grabarCola();
+  if(n){ const {data}=await sb.from('patadas').select('*').order('created_at',{ascending:true});
+    if(data) patadas=data; toast(`${n} ${n===1?'patada sincronizada':'patadas sincronizadas'}.`); }
+  bannerCola();
+}
+function bannerCola(){
+  const b=$('#offlineBanner');
+  if(cola.length){b.classList.remove('hidden');
+    b.textContent=`${cola.length} ${cola.length===1?'patada guardada':'patadas guardadas'} en este dispositivo, sin subir. Se suben solas cuando vuelva la señal.`;}
+  else b.classList.add('hidden');
+  $('#legPend').classList.toggle('hidden',!cola.length);
+}
+window.addEventListener('online',()=>vaciarCola().then(render));
+
+/* ============ cancha ============ */
+function dibujarCancha(svg){
+  let h='';
+  for(let i=0;i<10;i++) if(i%2===0) h+=`<rect class="stripe" x="${X0}" y="${Y_TRY+i*50}" width="${X1-X0}" height="50"/>`;
+  h+=`<rect x="${X0}" y="${Y_DEAD}" width="${X1-X0}" height="${Y_TRY-Y_DEAD}" fill="#101B15"/>`;
+  h+=`<rect class="chalkline" x="${X0}" y="${Y_DEAD}" width="${X1-X0}" height="${Y_HALF-Y_DEAD}"/>`;
+  h+=`<line class="chalkline strong" x1="${X0}" y1="${Y_TRY}" x2="${X1}" y2="${Y_TRY}"/>`;
+  h+=`<line class="chalkline strong" x1="${X0}" y1="${Y_HALF}" x2="${X1}" y2="${Y_HALF}"/>`;
+  h+=`<line class="chalkline" x1="${X0}" y1="${Y_TRY+220}" x2="${X1}" y2="${Y_TRY+220}" stroke-opacity=".45"/>`;
+  [Y_TRY+50,Y_TRY+400].forEach(y=>h+=`<line class="chalkline" x1="${X0}" y1="${y}" x2="${X1}" y2="${y}" stroke-opacity=".4" stroke-dasharray="14 12"/>`);
+  [70,170,570,670].forEach(x=>h+=`<line class="chalkline soft" x1="${x}" y1="${Y_TRY}" x2="${x}" y2="${Y_HALF}"/>`);
+  h+=`<line class="post" x1="${POST_L}" y1="${Y_TRY+6}" x2="${POST_L}" y2="${CROSS-26}"/>`;
+  h+=`<line class="post" x1="${POST_R}" y1="${Y_TRY+6}" x2="${POST_R}" y2="${CROSS-26}"/>`;
+  h+=`<line class="post" x1="${POST_L}" y1="${CROSS}" x2="${POST_R}" y2="${CROSS}"/>`;
+  h+=`<text class="zlabel" x="${X0+8}" y="${Y_TRY+212}">22 M</text>`;
+  h+=`<text class="zlabel" x="${X0+8}" y="${Y_HALF-14}">MITAD DE CANCHA</text>`;
+  h+=`<g class="gz"></g><g class="gm"></g>`;
+  svg.innerHTML=h;
+}
+const colorZona=p=>`hsl(${Math.round(p*1.45)} 62% 42%)`;
+function pintarZonas(svg,list){
+  let h='';
+  for(let c=0;c<NC;c++)for(let r=0;r<NR;r++){
+    const x=COLX[c],y=ROWY[r],w=COLX[c+1]-x,ht=ROWY[r+1]-y;
+    const k=list.filter(p=>col(p.x)===c&&row(p.y)===r);
+    const m=k.filter(p=>p.entro).length, hay=k.length>0, firme=k.length>=MIN_MUESTRA;
+    h+=`<rect x="${x}" y="${y}" width="${w}" height="${ht}" fill="${hay?colorZona(pct(m,k.length)):'#0E1712'}" fill-opacity="${firme?.8:hay?.3:.32}" stroke="#0B120E"/>`;
+    if(hay){
+      h+=`<text class="cellpct" x="${x+w/2}" y="${y+ht/2-1}" fill-opacity="${firme?1:.55}">${pct(m,k.length)}%</text>`;
+      h+=`<text class="cellsub" x="${x+w/2}" y="${y+ht/2+13}" fill-opacity="${firme?.7:.4}">${m}/${k.length}</text>`;
+    }
+  }
+  svg.querySelector('.gz').innerHTML=h;
+}
+function pintarMarcas(svg,list,conPending){
+  let h='';
+  list.forEach(p=>{
+    h+= p.entro?`<circle class="mk-ok" cx="${p.x}" cy="${p.y}" r="7"/>`
+               :`<circle class="mk-no" cx="${p.x}" cy="${p.y}" r="6.5"/>`;
+    if(p._local) h+=`<circle class="mk-wait" cx="${p.x}" cy="${p.y}" r="12"/>`;});
+  if(conPending&&pending) h+=`<circle class="mk-pend" cx="${pending.x}" cy="${pending.y}" r="10"/>
+    <line class="mk-pend" x1="${pending.x}" y1="${pending.y}" x2="${CX}" y2="${Y_TRY}" stroke-opacity=".45"/>`;
+  svg.querySelector('.gm').innerHTML=h;
+}
+$('#pitch').addEventListener('pointerdown',e=>{
+  const svg=$('#pitch'),pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+  const l=pt.matrixTransform(svg.getScreenCTM().inverse());
+  if(l.x<X0||l.x>X1||l.y<Y_TRY||l.y>Y_HALF){toast('Marcá dentro del campo, entre la línea de try y la mitad.');return;}
+  pending={x:Math.round(l.x),y:Math.round(l.y)}; render();
+});
+function confirmUI(){
+  const b=$('#confirmBox');
+  if(!pending){b.innerHTML='';return;}
+  b.innerHTML=`<div class="confirm">
+    <p><b>${dist(pending.x,pending.y)} m a los palos</b> · ${COLN[col(pending.x)]} · ${ROWN[row(pending.y)]} · ${tiempo}º tiempo</p>
+    <button class="btn ok" id="fOk">Entró</button>
+    <div class="misses">
+      <button class="btn miss" data-lado="izq">← Izquierda<span>erró por afuera</span></button>
+      <button class="btn miss" data-lado="corta">Corta<span>no llegó</span></button>
+      <button class="btn miss" data-lado="der">Derecha →<span>erró por afuera</span></button>
+    </div>
+    <div class="row" style="margin-top:9px"><button class="btn ghost small fit" id="fCancel">Cancelar</button></div>
+  </div>`;
+  $('#fOk').onclick=()=>registrar(true,null);
+  b.querySelectorAll('[data-lado]').forEach(x=>x.onclick=()=>registrar(false,x.dataset.lado));
+  $('#fCancel').onclick=()=>{pending=null;render();};
+}
+async function registrar(entro,lado){
+  const p=$('#selPartido').value;
+  const k={partido_id:p==='sin-partido'?null:p,x:pending.x,y:pending.y,entro,lado,
+           tipo:$('#selTipo').value,tiempo,distancia:dist(pending.x,pending.y)};
+  pending=null;
+  const {data,error}=await sb.from('patadas').insert(k).select().single();
+  if(error){ cola.push(k); grabarCola();
+    patadas.push({...k,id:'local-'+Date.now(),_local:true,created_at:new Date().toISOString()});
+    toast('Sin conexión: queda guardada acá y se sube después.');
+  }else patadas.push(data);
+  bannerCola(); render();
+}
+$('#undo').onclick=async()=>{
+  if(pending){pending=null;render();return;}
+  const locales=patadas.filter(p=>p._local);
+  if(locales.length){const last=locales[locales.length-1];
+    patadas=patadas.filter(p=>p!==last); cola.pop(); grabarCola(); render(); toast('Última patada borrada.'); return;}
+  const mias=patadas.filter(p=>!p._local);
+  if(!mias.length){toast('No hay nada para deshacer.');return;}
+  const last=mias[mias.length-1];
+  const {error}=await sb.from('patadas').delete().eq('id',last.id);
+  if(error){toast('No se pudo borrar.');return;}
+  patadas=patadas.filter(p=>p.id!==last.id); render(); toast('Última patada borrada.');
+};
+
+/* ============ tiempo y viento ============ */
+document.querySelectorAll('#segTiempo button').forEach(b=>b.onclick=async()=>{
+  const t=+b.dataset.t; if(t===tiempo) return;
+  tiempo=t;
+  document.querySelectorAll('#segTiempo button').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.t===t));
+  render();
+  const pa=partidoActivo();
+  if(pa && !pa[`viento${t}_int`]) abrirViento(true);
+});
+function vientoDe(pa,t){
+  if(!pa) return null;
+  const i=pa[`viento${t}_int`]; if(!i) return null;
+  return {dir:pa[`viento${t}_dir`]??0,int:i};
+}
+function flechaViento(dir,size,muted){
+  // dir en grados: 0 = sopla hacia los palos (hacia arriba en el dibujo)
+  const r=size/2, cx=r, cy=r, L=r*0.62;
+  const rad=(dir-90)*Math.PI/180;
+  const ex=cx+Math.cos(rad)*L, ey=cy+Math.sin(rad)*L;
+  const sx=cx-Math.cos(rad)*L, sy=cy-Math.sin(rad)*L;
+  const c=muted?'#93A79A':'#7FD4C1';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+    <defs><marker id="ah${dir}${muted?'m':''}" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 z" fill="${c}"/></marker></defs>
+    <rect x="${r*0.34}" y="${r*0.14}" width="${r*1.32}" height="${r*1.72}" rx="3" fill="#16241C" stroke="#2A3E33"/>
+    <line x1="${r*0.34}" y1="${r*0.42}" x2="${r*1.66}" y2="${r*0.42}" stroke="#2A3E33"/>
+    <line x1="${sx}" y1="${sy}" x2="${ex}" y2="${ey}" stroke="${c}" stroke-width="2.5" marker-end="url(#ah${dir}${muted?'m':''})"/>
+  </svg>`;
+}
+function vientoUI(){
+  const pa=partidoActivo(), v=vientoDe(pa,tiempo), b=$('#vientoBox');
+  $('#editViento').disabled=!pa;
+  if(!pa){b.innerHTML='<p class="hint" style="margin:0">Elegí un partido para poder cargar el viento.</p>';return;}
+  if(!v){b.innerHTML=`<p class="hint" style="margin:0">Todavía no cargaste el viento del ${tiempo}º tiempo.
+    <a href="#" id="setV">Cargalo ahora</a>.</p>`;
+    $('#setV').onclick=e=>{e.preventDefault();abrirViento();}; return;}
+  b.innerHTML=`<div class="windrow">${flechaViento(v.dir,74,false)}
+    <div class="windinfo"><b>${(DIRN[v.dir]||v.dir+'°').toUpperCase()}</b>
+    <i>intensidad ${INTN[v.int]} · ${tiempo}º tiempo</i></div></div>`;
+}
+function abrirViento(auto){
+  const pa=partidoActivo(); if(!pa) return;
+  const actual=vientoDe(pa,tiempo)||{dir:0,int:'medio'};
+  let dir=actual.dir, inten=actual.int;
+  const R=110;
+  const dial=()=>{
+    const marks=[0,45,90,135,180,225,270,315].map(d=>{
+      const rad=(d-90)*Math.PI/180, x=R+Math.cos(rad)*R*0.78, y=R+Math.sin(rad)*R*0.78;
+      return `<circle class="hit" data-dir="${d}" cx="${x}" cy="${y}" r="24" style="cursor:pointer"/>
+              <circle cx="${x}" cy="${y}" r="${d===dir?7:4.5}" fill="${d===dir?'#7FD4C1':'#2A3E33'}" style="pointer-events:none"/>`;}).join('');
+    const rad=(dir-90)*Math.PI/180;
+    return `<svg class="dial" viewBox="0 0 ${R*2} ${R*2}">
+      <rect x="${R*0.52}" y="${R*0.2}" width="${R*0.96}" height="${R*1.6}" rx="5" fill="#16241C" stroke="#2A3E33"/>
+      <line x1="${R*0.52}" y1="${R*0.44}" x2="${R*1.48}" y2="${R*0.44}" stroke="#2A3E33" stroke-width="2"/>
+      <text x="${R}" y="${R*0.34}" text-anchor="middle" fill="#93A79A" font-size="10" font-family="Inter">palos</text>
+      <text x="${R}" y="${R*1.94}" text-anchor="middle" fill="#93A79A" font-size="10" font-family="Inter">mitad de cancha</text>
+      <defs><marker id="dh" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+        <path d="M0,0 L8,4 L0,8 z" fill="#7FD4C1"/></marker></defs>
+      <line x1="${R-Math.cos(rad)*R*0.45}" y1="${R-Math.sin(rad)*R*0.45}"
+            x2="${R+Math.cos(rad)*R*0.45}" y2="${R+Math.sin(rad)*R*0.45}"
+            stroke="#7FD4C1" stroke-width="3" marker-end="url(#dh)"/>
+      ${marks}</svg>`;
+  };
+  const pintar=()=>{
+    $('#modalRoot').innerHTML=`<div class="modal"><div class="box">
+      <h3>Viento · ${tiempo}º tiempo</h3>
+      <p class="sub">${auto?'Cambiaste de tiempo. ':''}Marcá hacia dónde sopla, tomando la cancha como la ves al patear.</p>
+      ${dial()}
+      <p style="text-align:center;font-family:var(--display);letter-spacing:.04em;font-size:16px;margin:6px 0 14px">${(DIRN[dir]||dir+'°').toUpperCase()}</p>
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:5px">Intensidad</div>
+      <div class="seg" id="segInt">
+        <button data-i="bajo" aria-pressed="${inten==='bajo'}">Bajo</button>
+        <button data-i="medio" aria-pressed="${inten==='medio'}">Medio</button>
+        <button data-i="alto" aria-pressed="${inten==='alto'}">Alto</button>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn ghost fit" id="vCancel">Cancelar</button>
+        <button class="btn primary" id="vOk">Guardar</button>
+      </div></div></div>`;
+    $('#modalRoot').querySelectorAll('[data-dir]').forEach(c=>c.onclick=()=>{dir=+c.dataset.dir;pintar();});
+    $('#modalRoot').querySelectorAll('#segInt button').forEach(x=>x.onclick=()=>{inten=x.dataset.i;pintar();});
+    $('#vCancel').onclick=()=>$('#modalRoot').innerHTML='';
+    $('#vOk').onclick=async()=>{
+      const upd={}; upd[`viento${tiempo}_dir`]=dir; upd[`viento${tiempo}_int`]=inten;
+      const {error}=await sb.from('partidos').update(upd).eq('id',pa.id);
+      if(error){toast('No se pudo guardar el viento.');return;}
+      Object.assign(pa,upd); $('#modalRoot').innerHTML=''; render(); toast('Viento guardado.');
+    };
+  };
+  pintar();
+}
+$('#editViento').onclick=()=>abrirViento(false);
+
+/* ============ combos con sugerencias ============ */
+function combo(inputId,sugId,valores){
+  const inp=$('#'+inputId), box=$('#'+sugId);
+  const cerrar=()=>box.classList.add('hidden');
+  const abrir=()=>{
+    const q=inp.value.trim().toLowerCase();
+    const l=[...new Set(valores())].filter(v=>v&&v.toLowerCase().includes(q)).slice(0,8);
+    if(!l.length){cerrar();return;}
+    box.innerHTML=l.map(v=>`<div data-v="${esc(v)}">${esc(v)}</div>`).join('');
+    box.classList.remove('hidden');
+    box.querySelectorAll('[data-v]').forEach(d=>d.onmousedown=e=>{
+      e.preventDefault(); inp.value=d.dataset.v; cerrar();});
+  };
+  inp.addEventListener('focus',abrir);
+  inp.addEventListener('input',abrir);
+  inp.addEventListener('blur',()=>setTimeout(cerrar,120));
+  inp.addEventListener('keydown',e=>{if(e.key==='Escape')cerrar();});
+}
+combo('nuevoRival','sugRival',()=>partidos.map(p=>p.rival).filter(Boolean));
+combo('nuevoTorneo','sugTorneo',()=>partidos.map(p=>p.torneo).filter(Boolean));
+
+/* ============ partidos ============ */
+$('#addPartido').onclick=async()=>{
+  const rival=$('#nuevoRival').value.trim(),fecha=$('#nuevaFecha').value;
+  if(!rival&&!fecha){toast('Poné al menos el rival o la fecha.');return;}
+  const {data,error}=await sb.from('partidos').insert({rival,fecha:fecha||null,
+    torneo:$('#nuevoTorneo').value.trim()||null,condicion:$('#nuevaCondicion').value||null}).select().single();
+  if(error){toast('No se pudo crear el partido.');return;}
+  partidos.unshift(data); sel.add(data.id);
+  $('#nuevoRival').value=''; render(); $('#selPartido').value=data.id; render();
+  toast('Partido agregado.');
+};
+async function borrarPartido(id){
+  const n=patadas.filter(p=>p.partido_id===id).length;
+  if(!confirm(`¿Borrar "${nombrePartido(id)}"${n?` y sus ${n} patadas`:''}? No se puede deshacer.`))return;
+  const {error}=await sb.from('partidos').delete().eq('id',id);
+  if(error){toast('No se pudo borrar.');return;}
+  partidos=partidos.filter(p=>p.id!==id); patadas=patadas.filter(p=>p.partido_id!==id);
+  sel.delete(id); render();
+}
+
+/* ============ stats ============ */
+function filtradas(){
+  const ft=$('#filtroTipo').value, fh=$('#filtroTiempo').value;
+  return patadas.filter(p=>sel.has(pid(p))&&(ft==='todos'||p.tipo===ft)&&(fh==='todos'||String(p.tiempo||1)===fh));
+}
+function fila(nombre,list,minAviso){
+  const m=list.filter(p=>p.entro).length,a=list.length,p=pct(m,a);
+  const flojo=a>0&&a<(minAviso||0);
+  return `<tr><td style="${flojo?'opacity:.6':''}">${esc(nombre)}<div class="bar"><i style="width:${a?p:0}%"></i></div></td>
+    <td class="num" style="${flojo?'opacity:.6':''}">${a?p+'%':'—'}<i>${m}/${a}</i></td></tr>`;
+}
+function kpiHTML(list){
+  const m=list.filter(p=>p.entro).length,a=list.length;
+  const prom=a?Math.round(list.reduce((s,p)=>s+(p.distancia||0),0)/a):0;
+  const larga=list.filter(p=>p.entro).reduce((mx,p)=>Math.max(mx,p.distancia||0),0);
+  return `<div class="kpi"><div class="n">${a?pct(m,a):'—'}<span style="font-size:17px;color:var(--dim)">%</span></div><div class="l">Efectividad</div></div>
+    <div class="kpi"><div class="n small">${m}/${a}</div><div class="l">Entradas</div></div>
+    <div class="kpi"><div class="n small">${prom||'—'} m</div><div class="l">Distancia media</div></div>
+    <div class="kpi"><div class="n small">${larga?larga+' m':'—'}</div><div class="l">La más larga</div></div>`;
+}
+function tablaLado(L){
+  const err=L.filter(p=>!p.entro&&p.lado);
+  const t=$('#tablaLado');
+  if(!err.length){t.innerHTML='<tbody><tr><td class="empty">Todavía no hay erradas con lado cargado.</td></tr></tbody>';
+    $('#hintLado').textContent=''; return;}
+  const c={izq:0,der:0,corta:0}; err.forEach(p=>c[p.lado]++);
+  t.innerHTML='<tbody>'+['izq','der','corta'].map(k=>{
+    const n=c[k],p=pct(n,err.length);
+    return `<tr><td>${LADON[k]}<div class="bar thin"><i style="width:${p}%"></i></div></td>
+      <td class="num">${p}%<i>${n} de ${err.length}</i></td></tr>`;}).join('')+'</tbody>';
+  const dif=c.izq-c.der, tot=c.izq+c.der;
+  $('#hintLado').textContent = tot>=6 && Math.abs(dif)/tot>=.4
+    ? `Se te van bastante más a la ${dif>0?'izquierda':'derecha'}. Con esta muestra ya es una tendencia para mirar en el entrenamiento.`
+    : 'Con más patadas cargadas se va a ver si hay una tendencia clara hacia un lado.';
+}
+function tablaCtx(L){
+  const filas=[];
+  [1,2].forEach(t=>{const k=L.filter(p=>(p.tiempo||1)===t); if(k.length) filas.push([`${t}º tiempo`,k]);});
+  const grupos={'Viento a favor':[],'Viento en contra':[],'Viento cruzado':[],'Sin viento cargado':[]};
+  L.forEach(p=>{
+    const pa=partidos.find(x=>x.id===p.partido_id);
+    const v=pa?vientoDe(pa,p.tiempo||1):null;
+    if(!v){grupos['Sin viento cargado'].push(p);return;}
+    if(v.dir===0) grupos['Viento a favor'].push(p);
+    else if(v.dir===180) grupos['Viento en contra'].push(p);
+    else grupos['Viento cruzado'].push(p);
+  });
+  Object.entries(grupos).forEach(([n,k])=>{if(k.length) filas.push([n,k]);});
+  $('#tablaCtx').innerHTML= filas.length
+    ? '<tbody>'+filas.map(([n,k])=>fila(n,k,5)).join('')+'</tbody>'
+    : '<tbody><tr><td class="empty">Sin datos todavía.</td></tr></tbody>';
+}
+function chartPartidos(){
+  const conK=partidos.filter(p=>sel.has(p.id)&&patadas.some(k=>k.partido_id===p.id));
+  const orden=[...conK].sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||''));
+  const svg=$('#chartPartidos'),W=420,H=190,PL=34,PR=10,PT=14,PB=26;
+  if(orden.length<2){svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#93A79A" font-size="13" font-family="Inter">Con dos partidos o más aparece la evolución</text>`;
+    $('#chartHint').textContent=''; return;}
+  const ft=$('#filtroTipo').value, fh=$('#filtroTiempo').value;
+  const pts=orden.map((p,i)=>{
+    const k=patadas.filter(x=>x.partido_id===p.id&&(ft==='todos'||x.tipo===ft)&&(fh==='todos'||String(x.tiempo||1)===fh));
+    const v=pct(k.filter(x=>x.entro).length,k.length);
+    return {x:PL+(W-PL-PR)*(orden.length===1?.5:i/(orden.length-1)),
+            y:PT+(H-PT-PB)*(1-v/100),v,n:k.length,p};}).filter(o=>o.n>0);
+  if(pts.length<2){svg.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#93A79A" font-size="13" font-family="Inter">Sin datos suficientes con estos filtros</text>`;
+    $('#chartHint').textContent=''; return;}
+  let h='';
+  [0,50,100].forEach(v=>{const y=PT+(H-PT-PB)*(1-v/100);
+    h+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#2A3E33"/>
+        <text x="${PL-7}" y="${y+4}" text-anchor="end" fill="#93A79A" font-size="10" font-family="Inter">${v}%</text>`;});
+  h+=`<polyline fill="none" stroke="#F2C14E" stroke-width="2.5" stroke-linejoin="round" points="${pts.map(o=>o.x+','+o.y).join(' ')}"/>`;
+  pts.forEach(o=>h+=`<circle cx="${o.x}" cy="${o.y}" r="${Math.min(4+o.n,9)}" fill="#F2C14E" stroke="#16241C" stroke-width="2"><title>${esc(nombrePartido(o.p.id))}: ${o.v}% (${o.n})</title></circle>`);
+  svg.innerHTML=h;
+  $('#chartHint').textContent='El tamaño del punto es la cantidad de patadas de ese partido.';
+}
+function listaPartidosUI(){
+  const ft=$('#filtroTipo').value, fh=$('#filtroTiempo').value;
+  $('#listaPartidos').innerHTML=idsPartidos().map(id=>{
+    const k=patadas.filter(p=>pid(p)===id&&(ft==='todos'||p.tipo===ft)&&(fh==='todos'||String(p.tiempo||1)===fh));
+    const m=k.filter(p=>p.entro).length;
+    return `<div class="prow"><input type="checkbox" data-pid="${id}" ${sel.has(id)?'checked':''} aria-label="${esc(nombrePartido(id))}">
+      <span class="pname">${esc(nombrePartido(id))}<i>${k.length?`${m}/${k.length} · ${pct(m,k.length)}%`:'sin patadas'}</i></span></div>`;}).join('');
+  $('#listaPartidos').querySelectorAll('[data-pid]').forEach(c=>c.onchange=()=>{
+    c.checked?sel.add(c.dataset.pid):sel.delete(c.dataset.pid); render();});
+}
+function tablaPartidosUI(){
+  const t=$('#tablaPartidos');
+  if(!partidos.length){t.innerHTML='<tbody><tr><td class="empty">Todavía no cargaste ningún partido.</td></tr></tbody>';return;}
+  t.innerHTML='<tbody>'+partidos.map(p=>{
+    const k=patadas.filter(x=>x.partido_id===p.id),m=k.filter(x=>x.entro).length;
+    const meta=[p.torneo,p.condicion].filter(Boolean).join(' · ');
+    const v1=vientoDe(p,1),v2=vientoDe(p,2);
+    const vi=[v1&&`1T ${DIRN[v1.dir]||''} ${INTN[v1.int]}`,v2&&`2T ${DIRN[v2.dir]||''} ${INTN[v2.int]}`].filter(Boolean).join(' · ');
+    return `<tr><td>${esc(nombrePartido(p.id))}
+      ${meta?`<i style="display:block;font-style:normal;font-size:11px;color:var(--dim)">${esc(meta)}</i>`:''}
+      ${vi?`<i style="display:block;font-style:normal;font-size:11px;color:var(--dim)">viento: ${esc(vi)}</i>`:''}</td>
+      <td class="num">${k.length?pct(m,k.length)+'%':'—'}<i>${m}/${k.length}</i></td>
+      <td style="width:1%"><button class="btn small ghost" data-delp="${p.id}">Borrar</button></td></tr>`;}).join('')+'</tbody>';
+  t.querySelectorAll('[data-delp]').forEach(b=>b.onclick=()=>borrarPartido(b.dataset.delp));
+}
+
+function render(){
+  const s=$('#selPartido'),v=s.value;
+  s.innerHTML='<option value="sin-partido">Sin partido</option>'+
+    partidos.map(p=>`<option value="${p.id}">${esc(nombrePartido(p.id))}</option>`).join('');
+  if(v&&[...s.options].some(o=>o.value===v)) s.value=v;
+
+  const deAct=patadas.filter(p=>pid(p)===s.value);
+  pintarMarcas($('#pitch'),deAct,true); confirmUI(); vientoUI();
+  $('#kpisPartido').innerHTML=kpiHTML(deAct);
+
+  listaPartidosUI();
+  const L=filtradas();
+  $('#kpis').innerHTML=kpiHTML(L);
+  pintarZonas($('#pitchStats'),L); pintarMarcas($('#pitchStats'),L,false);
+  $('#tablaDist').innerHTML='<tbody>'+ROWN.map((n,i)=>fila(n,L.filter(p=>row(p.y)===i),MIN_MUESTRA)).join('')+'</tbody>';
+  $('#tablaAng').innerHTML='<tbody>'+COLN.map((n,i)=>fila(n,L.filter(p=>col(p.x)===i),MIN_MUESTRA)).join('')+'</tbody>';
+  tablaLado(L); tablaCtx(L); chartPartidos();
+
+  const u=[...L].reverse().slice(0,8);
+  $('#tablaUltimas').innerHTML= u.length
+    ? '<tbody>'+u.map(p=>`<tr><td>
+        <span class="dot" style="${p.entro?'background:var(--ok)':'border:2px solid var(--no)'}"></span>
+        ${p.distancia} m · ${COLN[col(p.x)]}${p.entro?'':' · '+(LADON[p.lado]||'erró')}
+        <i style="display:block;font-style:normal;font-size:11px;color:var(--dim)">${TIPON[p.tipo]||p.tipo} · ${p.tiempo||1}º T · ${esc(nombrePartido(pid(p)))}</i></td>
+        <td class="num" style="width:1%"><button class="btn small ghost" data-delk="${p.id}">Borrar</button></td></tr>`).join('')+'</tbody>'
+    : '<tbody><tr><td class="empty">Todavía no hay patadas con estos filtros.</td></tr></tbody>';
+  $('#tablaUltimas').querySelectorAll('[data-delk]').forEach(b=>b.onclick=async()=>{
+    const id=b.dataset.delk;
+    if(String(id).startsWith('local-')){patadas=patadas.filter(p=>p.id!==id);render();return;}
+    const {error}=await sb.from('patadas').delete().eq('id',id);
+    if(error){toast('No se pudo borrar.');return;}
+    patadas=patadas.filter(p=>p.id!==id); render();});
+
+  tablaPartidosUI(); bannerCola();
+}
+
+/* ============ varios ============ */
+$('#filtroTipo').onchange=render;
+$('#filtroTiempo').onchange=render;
+$('#selPartido').onchange=render;
+$('#selTodos').onclick=()=>{sel=new Set(idsPartidos());render();};
+$('#selNinguno').onclick=()=>{sel=new Set();render();};
+$('#recargar').onclick=()=>cargar().then(()=>toast('Datos actualizados.'));
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  const t=b.dataset.tab;
+  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  ['registrar','stats','partidos'].forEach(k=>$('#tab-'+k).classList.toggle('hidden',k!==t));
+  window.scrollTo({top:0,behavior:'smooth'});
+});
+$('#export').onclick=()=>{
+  const rows=[['fecha','rival','torneo','condicion','tipo','tiempo','entro','lado_error','distancia_m','angulo','franja','viento_dir','viento_int','x','y']];
+  patadas.forEach(p=>{
+    const pa=partidos.find(x=>x.id===p.partido_id)||{};
+    const v=vientoDe(pa,p.tiempo||1);
+    rows.push([pa.fecha||'',pa.rival||'',pa.torneo||'',pa.condicion||'',p.tipo,p.tiempo||1,
+      p.entro?'SI':'NO',p.lado||'',p.distancia,COLN[col(p.x)],ROWN[row(p.y)],
+      v?(DIRN[v.dir]||v.dir):'',v?v.int:'',p.x,p.y]);});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(["\ufeff"+rows.map(r=>r.join(';')).join('\n')],{type:'text/csv;charset=utf-8'}));
+  a.download='patadas.csv'; a.click(); toast('CSV descargado.');
+};
+</script>
+</body>
+</html>
