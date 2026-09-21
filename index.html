@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#101913">
-  <link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icono-180.png">
 <link rel="icon" type="image/png" href="icono-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -157,6 +157,15 @@
   .banner{background:rgba(242,193,78,.12);border:1px solid rgba(242,193,78,.45);color:var(--ok);border-radius:9px;padding:10px 13px;font-size:13px;margin-bottom:12px}
   .cols{display:grid;grid-template-columns:1fr;gap:14px}
   @media(min-width:900px){.cols{grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);align-items:start}}
+  .codigo{font-family:var(--display);font-size:28px;letter-spacing:.2em;color:var(--ok);line-height:1}
+  .eqrow{border-bottom:1px solid rgba(255,255,255,.06);padding:11px 0}
+  .eqrow:last-child{border-bottom:none}
+  .eqrow .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .eqrow .nm{font-weight:600}
+  .eqrow .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .banner b{color:var(--chalk)}
+  #viendoBanner{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  td .sub{display:block;font-style:normal;font-size:11px;color:var(--dim);margin-top:2px}
   @media (prefers-reduced-motion: reduce){*{transition:none !important}}
 </style>
 </head>
@@ -185,11 +194,13 @@
   </div>
 
   <div id="offlineBanner" class="banner hidden"></div>
+  <div id="viendoBanner" class="banner hidden"></div>
 
   <div class="tabs" role="tablist">
     <button role="tab" data-tab="registrar" aria-selected="true">Registrar</button>
     <button role="tab" data-tab="stats" aria-selected="false">Estadísticas</button>
     <button role="tab" data-tab="partidos" aria-selected="false">Partidos</button>
+    <button role="tab" data-tab="equipo" aria-selected="false">Equipo</button>
   </div>
 
   <!-- ================= REGISTRAR ================= -->
@@ -365,6 +376,33 @@
       <p class="hint">El CSV trae el detalle completo, incluido lado del error, tiempo y viento.</p>
     </div>
   </section>
+
+  <!-- ================= EQUIPO ================= -->
+  <section id="tab-equipo" class="hidden">
+    <div class="cols">
+      <div>
+        <div class="card">
+          <h2>Tu equipo</h2>
+          <div id="miEquipoBox"><p class="hint" style="margin:0">Cargando…</p></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h2>Equipos que entrenás</h2>
+          <div id="entrenoBox"></div>
+          <div class="row" style="margin-top:12px">
+            <label class="field">Nombre del equipo nuevo<input type="text" id="nuevoEquipo" placeholder="Ej: Pateadores Primera"></label>
+            <button class="btn fit" id="crearEquipo">Crear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card hidden" id="plantelCard">
+      <h2><span id="plantelTitulo">Plantel</span> <select id="selEquipo" class="act hidden" style="width:auto;padding:6px 10px"></select></h2>
+      <table id="tablaPlantel"><tbody></tbody></table>
+      <p class="hint">Tocá <b>Ver</b> para abrir las estadísticas completas de un jugador. Es solo lectura: no podés cargar ni borrar nada suyo.</p>
+    </div>
+  </section>
 </div>
 
 <div id="modalRoot"></div>
@@ -404,6 +442,7 @@ const esc=t=>String(t??'').replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&am
 /* ============ estado ============ */
 let sb=null,user=null,partidos=[],patadas=[],cola=[];
 let pending=null,sel=new Set(['sin-partido']),modoAlta=false,tiempo=1;
+let viendo=null, misDatos=null, miMembresia=null, misEquipos=[], equipoSel=null, plantel=[];
 
 const COLA_KEY='palos:cola';
 const leerCola=()=>{try{return JSON.parse(localStorage.getItem(COLA_KEY)||'[]')}catch(e){return[]}};
@@ -457,11 +496,21 @@ $('#pass').addEventListener('keydown',e=>{if(e.key==='Enter')$('#btnAuth').click
 /* ============ datos ============ */
 async function cargar(){
   const [rp,rk]=await Promise.all([
-    sb.from('partidos').select('*').order('fecha',{ascending:false,nullsFirst:false}),
-    sb.from('patadas').select('*').order('created_at',{ascending:true})]);
+    traerTodo(()=>sb.from('partidos').select('*').eq('user_id',user.id).order('fecha',{ascending:false,nullsFirst:false})),
+    traerTodo(()=>sb.from('patadas').select('*').eq('user_id',user.id).order('created_at',{ascending:true}))]);
   if(rp.error||rk.error){toast('No se pudieron cargar los datos.');return;}
   partidos=rp.data||[]; patadas=rk.data||[];
   sel=new Set(idsPartidos()); await vaciarCola(); render();
+}
+/* trae todas las filas de a 1000 (Supabase corta en 1000 por consulta) */
+async function traerTodo(armar){
+  const out=[],P=1000;
+  for(let i=0;;i+=P){
+    const {data,error}=await armar().range(i,i+P-1);
+    if(error) return {data:null,error};
+    out.push(...data); if(data.length<P) break;
+  }
+  return {data:out,error:null};
 }
 const idsPartidos=()=>['sin-partido',...partidos.map(p=>p.id)];
 const pid=p=>p.partido_id||'sin-partido';
@@ -477,8 +526,8 @@ async function vaciarCola(){
   const quedan=[];
   for(const k of cola){ const {error}=await sb.from('patadas').insert(k); if(error) quedan.push(k); }
   const n=cola.length-quedan.length; cola=quedan; grabarCola();
-  if(n){ const {data}=await sb.from('patadas').select('*').order('created_at',{ascending:true});
-    if(data) patadas=data; toast(`${n} ${n===1?'patada sincronizada':'patadas sincronizadas'}.`); }
+  if(n){ const {data}=await traerTodo(()=>sb.from('patadas').select('*').eq('user_id',user.id).order('created_at',{ascending:true}));
+    if(data){ if(viendo) misDatos.patadas=data; else patadas=data; } toast(`${n} ${n===1?'patada sincronizada':'patadas sincronizadas'}.`); }
   bannerCola();
 }
 function bannerCola(){
@@ -881,6 +930,7 @@ function render(){
     const {error}=await sb.from('patadas').delete().eq('id',id);
     if(error){toast('No se pudo borrar.');return;}
     patadas=patadas.filter(p=>p.id!==id); render();});
+  if(viendo) $('#tablaUltimas').querySelectorAll('[data-delk]').forEach(b=>b.remove());
 
   tablaPartidosUI(); bannerCola();
 }
@@ -896,12 +946,13 @@ $('#limpiarFiltros').onclick=()=>{
   sel=new Set(idsPartidos()); render();
 };
 $('#recargar').onclick=()=>cargar().then(()=>toast('Datos actualizados.'));
-document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
-  const t=b.dataset.tab;
-  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
-  ['registrar','stats','partidos'].forEach(k=>$('#tab-'+k).classList.toggle('hidden',k!==t));
+function irATab(t){
+  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===t));
+  ['registrar','stats','partidos','equipo'].forEach(k=>$('#tab-'+k).classList.toggle('hidden',k!==t));
+  if(t==='equipo') cargarEquipo();
   window.scrollTo({top:0,behavior:'smooth'});
-});
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>irATab(b.dataset.tab));
 $('#export').onclick=()=>{
   const rows=[['fecha','rival','torneo','condicion','tipo','tiempo','entro','lado_error','distancia_m','angulo','franja','viento_dir','viento_int','x','y']];
   patadas.forEach(p=>{
@@ -914,6 +965,178 @@ $('#export').onclick=()=>{
   a.href=URL.createObjectURL(new Blob(["\ufeff"+rows.map(r=>r.join(';')).join('\n')],{type:'text/csv;charset=utf-8'}));
   a.download='patadas.csv'; a.click(); toast('CSV descargado.');
 };
+
+/* ============ equipos ============ */
+const fechaCorta=t=>{const d=new Date(t);return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;};
+
+async function cargarEquipo(){
+  const [rm,re]=await Promise.all([
+    sb.from('miembros').select('*, equipos(nombre)').eq('user_id',user.id).maybeSingle(),
+    sb.from('equipos').select('*').eq('entrenador_id',user.id).order('created_at')]);
+  if(rm.error||re.error){toast('No se pudo cargar la info de equipos. ¿Corriste la migración 3?');return;}
+  miMembresia=rm.data||null; misEquipos=re.data||[];
+  if(!misEquipos.some(e=>e.id===equipoSel)) equipoSel=misEquipos[0]?.id||null;
+  miEquipoUI(); entrenoUI(); await cargarPlantel();
+}
+
+function miEquipoUI(){
+  const b=$('#miEquipoBox');
+  if(miMembresia){
+    const m=miMembresia;
+    const alcance=m.visible_desde?`lo que cargaste desde el ${fechaCorta(m.visible_desde)}`:'todo tu historial';
+    b.innerHTML=`<p style="margin:0 0 4px">Estás en <b>${esc(m.equipos?.nombre||'un equipo')}</b> como <b>${esc(m.nombre)}</b>.</p>
+      <p class="hint" style="margin:0 0 12px">Tu entrenador ve ${alcance}. Solo mira: no puede cargar ni borrar nada tuyo.</p>
+      <button class="btn small ghost" id="salirEquipo">Salir del equipo</button>`;
+    $('#salirEquipo').onclick=async()=>{
+      if(!confirm('¿Salir del equipo? El entrenador deja de ver tus números en el acto.'))return;
+      const {error}=await sb.from('miembros').delete().eq('user_id',user.id);
+      if(error){toast('No se pudo salir.');return;}
+      toast('Saliste del equipo.'); cargarEquipo();
+    };
+    return;
+  }
+  b.innerHTML=`<p class="hint" style="margin:0 0 12px">Si tu entrenador te pasó un código, ponelo acá para que pueda ver tus números.</p>
+    <div class="row">
+      <label class="field" style="max-width:150px">Código<input type="text" id="codUnirse" placeholder="Ej: K7X42P" autocapitalize="characters" autocomplete="off"></label>
+      <label class="field">Tu nombre<input type="text" id="nomUnirse" placeholder="Como te conoce el entrenador"></label>
+    </div>
+    <div style="margin-top:12px">
+      <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:5px">Qué puede ver</div>
+      <div class="seg" id="segAlcance">
+        <button data-a="todo" aria-pressed="true">Todo mi historial</button>
+        <button data-a="hoy" aria-pressed="false">Solo desde hoy</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:13px"><button class="btn primary fit" id="btnUnirse">Unirme</button></div>`;
+  let alc='todo';
+  b.querySelectorAll('#segAlcance button').forEach(x=>x.onclick=()=>{
+    alc=x.dataset.a; b.querySelectorAll('#segAlcance button').forEach(y=>y.setAttribute('aria-pressed',y===x));});
+  $('#btnUnirse').onclick=async()=>{
+    const codigo=$('#codUnirse').value.trim(), nombre=$('#nomUnirse').value.trim();
+    if(!codigo||!nombre){toast('Poné el código y tu nombre.');return;}
+    $('#btnUnirse').disabled=true;
+    const {data,error}=await sb.rpc('unirse_equipo',{p_codigo:codigo,p_nombre:nombre,p_todo_historial:alc==='todo'});
+    $('#btnUnirse').disabled=false;
+    if(error){toast(error.message||'No se pudo unir.');return;}
+    toast(`Te uniste a ${data}.`); cargarEquipo();
+  };
+}
+
+function entrenoUI(){
+  const b=$('#entrenoBox');
+  if(!misEquipos.length){
+    b.innerHTML='<p class="hint" style="margin:0">Si entrenás pateadores, creá un equipo y pasales el código. Cada uno decide si se une y qué te comparte.</p>';
+    return;
+  }
+  b.innerHTML=misEquipos.map(e=>`<div class="eqrow">
+      <div class="top"><span class="nm">${esc(e.nombre)}</span><span class="codigo">${esc(e.codigo)}</span></div>
+      <div class="acts">
+        <button class="btn small" data-copiar="${e.id}">Copiar invitación</button>
+        <button class="btn small ghost" data-nuevocod="${e.id}">Nuevo código</button>
+        <button class="btn small ghost" data-borrareq="${e.id}">Borrar equipo</button>
+      </div></div>`).join('');
+  b.querySelectorAll('[data-copiar]').forEach(x=>x.onclick=async()=>{
+    const e=misEquipos.find(q=>q.id===x.dataset.copiar);
+    const txt=`Sumate a "${e.nombre}" en Palos para registrar tus patadas a los palos.\n${location.origin+location.pathname}\nEntrá, andá a la pestaña Equipo y poné el código: ${e.codigo}`;
+    try{await navigator.clipboard.writeText(txt);toast('Invitación copiada. Pegala en WhatsApp.');}
+    catch(err){prompt('Copiá este texto:',txt);}
+  });
+  b.querySelectorAll('[data-nuevocod]').forEach(x=>x.onclick=async()=>{
+    if(!confirm('¿Generar un código nuevo? El anterior deja de servir para sumarse. Los que ya están siguen en el equipo.'))return;
+    const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const cod=Array.from(crypto.getRandomValues(new Uint8Array(6)),n=>A[n%32]).join('');
+    const {error}=await sb.from('equipos').update({codigo:cod}).eq('id',x.dataset.nuevocod);
+    if(error){toast('No se pudo cambiar el código.');return;}
+    toast('Código nuevo listo.'); cargarEquipo();
+  });
+  b.querySelectorAll('[data-borrareq]').forEach(x=>x.onclick=async()=>{
+    const e=misEquipos.find(q=>q.id===x.dataset.borrareq);
+    if(!confirm(`¿Borrar "${e.nombre}"? Los jugadores salen del equipo, pero sus datos quedan intactos en sus cuentas.`))return;
+    const {error}=await sb.from('equipos').delete().eq('id',e.id);
+    if(error){toast('No se pudo borrar.');return;}
+    toast('Equipo borrado.'); cargarEquipo();
+  });
+}
+
+$('#crearEquipo').onclick=async()=>{
+  const nombre=$('#nuevoEquipo').value.trim();
+  if(!nombre){toast('Ponele un nombre al equipo.');return;}
+  const {data,error}=await sb.from('equipos').insert({nombre}).select().single();
+  if(error){toast('No se pudo crear el equipo.');return;}
+  $('#nuevoEquipo').value=''; equipoSel=data.id;
+  toast('Equipo creado. Copiá la invitación y pasala.'); cargarEquipo();
+};
+$('#selEquipo').onchange=()=>{equipoSel=$('#selEquipo').value;cargarPlantel();};
+
+async function cargarPlantel(){
+  const card=$('#plantelCard'), t=$('#tablaPlantel');
+  if(!equipoSel){card.classList.add('hidden');return;}
+  card.classList.remove('hidden');
+  const eq=misEquipos.find(e=>e.id===equipoSel);
+  $('#plantelTitulo').textContent='Plantel · '+(eq?.nombre||'');
+  const s=$('#selEquipo');
+  s.classList.toggle('hidden',misEquipos.length<2);
+  s.innerHTML=misEquipos.map(e=>`<option value="${e.id}">${esc(e.nombre)}</option>`).join(''); s.value=equipoSel;
+
+  const {data:mm,error}=await sb.from('miembros').select('*').eq('equipo_id',equipoSel);
+  if(error){t.innerHTML='<tbody><tr><td class="empty">No se pudo cargar el plantel.</td></tr></tbody>';return;}
+  if(!mm.length){t.innerHTML='<tbody><tr><td class="empty">Todavía no se unió nadie. Copiá la invitación y pasala por WhatsApp.</td></tr></tbody>';plantel=[];return;}
+  const {data:kk}=await traerTodo(()=>sb.from('patadas').select('user_id,entro,lado,distancia,created_at').in('user_id',mm.map(m=>m.user_id)));
+  plantel=mm.map(m=>{
+    const k=(kk||[]).filter(x=>x.user_id===m.user_id), a=k.length, e=k.filter(x=>x.entro).length;
+    const err=k.filter(x=>!x.entro&&x.lado), c={izq:0,der:0,corta:0}; err.forEach(x=>c[x.lado]++);
+    const dom=err.length?Object.entries(c).sort((p,q)=>q[1]-p[1])[0]:null;
+    const ult=a?k.reduce((mx,x)=>x.created_at>mx?x.created_at:mx,k[0].created_at):null;
+    return {...m,a,e,p:a?e/a:-1,prom:a?Math.round(k.reduce((s2,x)=>s2+(x.distancia||0),0)/a):0,
+            dom:dom&&dom[1]>0?`${LADON[dom[0]].toLowerCase()} (${pct(dom[1],err.length)}%)`:'—',ult};
+  }).sort((x,y)=>y.p-x.p||x.nombre.localeCompare(y.nombre));
+
+  t.innerHTML='<tbody>'+plantel.map(j=>`<tr>
+    <td><b>${esc(j.nombre)}</b>
+      <span class="sub">${j.a?`${j.e}/${j.a} · ${j.prom} m media · erra a la ${j.dom}`:'sin patadas todavía'}</span>
+      <span class="sub">${j.visible_desde?`comparte desde el ${fechaCorta(j.visible_desde)}`:'comparte todo'}${j.ult?` · última carga ${fechaCorta(j.ult)}`:''}</span>
+      ${j.a?`<div class="bar"><i style="width:${Math.round(j.p*100)}%"></i></div>`:''}</td>
+    <td class="num">${j.a?Math.round(j.p*100)+'%':'—'}</td>
+    <td style="width:1%;white-space:nowrap">
+      <button class="btn small" data-ver="${j.user_id}" ${j.a?'':'disabled'}>Ver</button>
+      <button class="btn small ghost" data-quitar="${j.user_id}">Quitar</button></td></tr>`).join('')+'</tbody>';
+  t.querySelectorAll('[data-ver]').forEach(x=>x.onclick=()=>verJugador(plantel.find(j=>j.user_id===x.dataset.ver)));
+  t.querySelectorAll('[data-quitar]').forEach(x=>x.onclick=async()=>{
+    const j=plantel.find(q=>q.user_id===x.dataset.quitar);
+    if(!confirm(`¿Sacar a ${j.nombre} del equipo? Sus datos quedan en su cuenta; vos dejás de verlos.`))return;
+    const {error}=await sb.from('miembros').delete().eq('user_id',j.user_id);
+    if(error){toast('No se pudo quitar.');return;}
+    toast(`${j.nombre} salió del equipo.`); cargarPlantel();
+  });
+}
+
+async function verJugador(j){
+  if(!j) return;
+  const [rp,rk]=await Promise.all([
+    traerTodo(()=>sb.from('partidos').select('*').eq('user_id',j.user_id).order('fecha',{ascending:false,nullsFirst:false})),
+    traerTodo(()=>sb.from('patadas').select('*').eq('user_id',j.user_id).order('created_at',{ascending:true}))]);
+  if(rp.error||rk.error){toast('No se pudieron traer los datos de '+j.nombre+'.');return;}
+  if(!viendo) misDatos={partidos,patadas,sel};
+  viendo={user_id:j.user_id,nombre:j.nombre};
+  partidos=rp.data; patadas=rk.data; sel=new Set(idsPartidos()); pending=null;
+  $('#limpiarFiltros').click();
+  modoVista(); irATab('stats');
+}
+function volverAMisDatos(){
+  if(!viendo) return;
+  ({partidos,patadas,sel}=misDatos); misDatos=null; viendo=null; pending=null;
+  modoVista(); render(); irATab('equipo');
+}
+function modoVista(){
+  document.querySelector('[data-tab="registrar"]').classList.toggle('hidden',!!viendo);
+  document.querySelector('[data-tab="partidos"]').classList.toggle('hidden',!!viendo);
+  const b=$('#viendoBanner');
+  if(!viendo){b.classList.add('hidden');b.innerHTML='';return;}
+  b.classList.remove('hidden');
+  b.innerHTML=`<span>Estás viendo los números de <b>${esc(viendo.nombre)}</b> · solo lectura</span>
+    <button class="btn small" id="btnVolver">Volver a mis datos</button>`;
+  $('#btnVolver').onclick=volverAMisDatos;
+}
 </script>
 </body>
 </html>
